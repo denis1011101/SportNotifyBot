@@ -7,6 +7,7 @@ require "nokogiri"
 ENV['TZ'] = 'Asia/Yekaterinburg'
 TOKEN = ENV['TOKEN']
 CHAT_ID = ENV['CHAT_ID']
+TELEGRAM_MAX_MESSAGE_LENGTH = 4096
 
 module SportNotifyBot
   class Error < StandardError; end
@@ -31,6 +32,8 @@ module SportNotifyBot
         table << "#{times[index]} - #{team1} (#{countries[index * 2]}) "\
                  "#{team2} (#{countries[index * 2 + 1]}) "\
                  "#{score[index * 2]} : #{score[index * 2 + 1]}"
+
+        break if table.join("\n").length > TELEGRAM_MAX_MESSAGE_LENGTH
       end
 
       table.join("\n")
