@@ -8,8 +8,9 @@ gemspec
 gem "faraday", "~> 2.7", ">= 2.7.4"
 gem "nokogiri", "~> 1.14", ">= 1.14.2"
 group :development, :test do
-  gem "rspec", "~> 3.12"
+  gem "rspec", "~> 3.12", require: false
   gem "rubocop", "~> 1.21"
+  gem "webmock", "~> 3.18", ">= 3.18.1", require: false
 end
 
-ruby "3.1.3"
+ruby "3.4.2"
