@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
   spec.description = "bot for send notifications about sport matches"
   spec.homepage = "https://www.github.com/"
   spec.license = "MIT"
-  spec.required_ruby_version = ">= 3.1.3"
+  spec.required_ruby_version = ">= 3.4.1"
 
   spec.metadata["allowed_push_host"] = "https://www.github.com/"
 
@@ -31,9 +31,13 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  # Uncomment to register a new dependency of your gem
-  # spec.add_dependency "example-gem", "~> 1.0"
+  spec.add_dependency "base64", "~> 0.2.0"
+  spec.add_dependency "dotenv", "~> 3.1.8"
+  spec.add_dependency "faraday", "~> 2.13.0"
+  spec.add_dependency "nokogiri", "~> 1.18.7"
+  spec.add_dependency "ferrum", "~> 0.16"
 
-  # For more information and examples about making a new gem, check out our
-  # guide at: https://bundler.io/guides/creating_gem.html
+  spec.add_development_dependency "rspec", "~> 3.13.0"
+  spec.add_development_dependency "rubocop", "~> 1.75.2"
+  spec.add_development_dependency "webmock", "~> 3.25.1"
 end
