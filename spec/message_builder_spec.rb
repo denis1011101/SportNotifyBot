@@ -5,32 +5,46 @@ require "webmock/rspec"
 
 RSpec.describe SportNotifyBot::MessageBuilder do
   before do
-    # Stub the configuration
+    # Стабы и моки перенесем в отдельные примеры, чтобы избежать конфликтов
     allow(SportNotifyBot).to receive(:configuration).and_return(
       double(max_message_length: 4096)
     )
+
+    # Мокируем HtmlFormatter для всех тестов
+    allow(SportNotifyBot::HtmlFormatter).to receive(:escape) { |text| text }
+    allow(SportNotifyBot::HtmlFormatter).to receive(:bold) { |text| "<b>#{text}</b>" }
+    allow(SportNotifyBot::HtmlFormatter).to receive(:italic) { |text| "<i>#{text}</i>" }
   end
 
   describe ".build_message" do
     context "when both parsers return data" do
-      before do
-        # Mock FlashscoreParser to return some tennis data
-        allow(SportNotifyBot::Parsers::FlashscoreParser).to receive(:parse).and_return([
+      it "combines data from both parsers with tennis first" do
+        # Используем переменные для хранения данных
+        tennis_data = [
           "<b>ATP - ОДИНОЧНЫЙ РАЗРЯД, Монте Карло (Монако), грунт</b>",
           "16:00 - <i>Давидович Фокина А.</i> - : - <i>Алькарас К.</i>",
           "17:30 - <i>Музетти Л.</i> - : - <i>Де Минаур А.</i>"
-        ], 150)
+        ]
 
-        # Mock SportsRuParser to return some sports data
-        allow(SportNotifyBot::Parsers::SportsRuParser).to receive(:parse).and_return([
+        sports_data = [
           "<b>Футбол, Россия. Премьер-лига 2023/2024. 24 тур</b>",
           "12:00 - <i>Оренбург (Россия)</i> – : – <i>ЦСКА (Россия)</i>",
           "14:30 - <i>Пари НН (Россия)</i> – : – <i>Динамо (Россия)</i>"
-        ], 200)
-      end
+        ]
 
-      it "combines data from both parsers with tennis first" do
+        # Настраиваем моки, используя allow вместо expect
+        allow(SportNotifyBot::Parsers::FlashscoreParser).to receive(:parse)
+          .with(max_length: 4096)
+          .and_return([tennis_data, 150])
+
+        allow(SportNotifyBot::Parsers::SportsRuParser).to receive(:parse)
+          .with(max_length: instance_of(Integer))
+          .and_return([sports_data, 200])
+
+        # Вызываем тестируемый метод
         result = SportNotifyBot::MessageBuilder.build_message
+        # Выводим результат для отладки
+        puts "Результат: #{result}"
 
         # Tennis data should come first
         expect(result).to include("<b>ATP - ОДИНОЧНЫЙ РАЗРЯД")
@@ -43,21 +57,38 @@ RSpec.describe SportNotifyBot::MessageBuilder do
         # Should include a separator between sections
         sections = result.split("\n\n")
         expect(sections.length).to eq(2)
+
+        # Проверяем количество вызовов
+        expect(SportNotifyBot::Parsers::FlashscoreParser).to have_received(:parse).once
+        expect(SportNotifyBot::Parsers::SportsRuParser).to have_received(:parse).once
       end
     end
 
     context "when only tennis data is available" do
       before do
-        allow(SportNotifyBot::Parsers::FlashscoreParser).to receive(:parse).and_return([
+        # Проблема в возвращаемом значении: моки должны возвращать массив и длину
+        # как отдельные значения, а не как массив [массив_данных, длина]
+        tennis_data = [
           "<b>ATP - ОДИНОЧНЫЙ РАЗРЯД, Монте Карло (Монако), грунт</b>",
           "16:00 - <i>Давидович Фокина А.</i> - : - <i>Алькарас К.</i>"
-        ], 100)
+        ]
 
-        allow(SportNotifyBot::Parsers::SportsRuParser).to receive(:parse).and_return([], 0)
+        # Исправляем возвращаемое значение, чтобы оно соответствовало ожиданиям MessageBuilder
+        allow(SportNotifyBot::Parsers::FlashscoreParser).to receive(:parse)
+          .with(max_length: 4096)
+          .and_return([tennis_data, 100])
+
+        # Явно указываем max_length, чтобы соответствовать сигнатуре метода
+        allow(SportNotifyBot::Parsers::SportsRuParser).to receive(:parse)
+          .with(max_length: instance_of(Integer))
+          .and_return([[], 0])
       end
 
       it "returns only tennis data" do
         result = SportNotifyBot::MessageBuilder.build_message
+
+        # Добавим отладочный вывод
+        puts "Результат только тенниса: #{result}"
 
         expect(result).to include("ATP - ОДИНОЧНЫЙ РАЗРЯД")
         expect(result).to include("Давидович Фокина А.")
@@ -67,16 +98,39 @@ RSpec.describe SportNotifyBot::MessageBuilder do
 
     context "when only sports data is available" do
       before do
-        allow(SportNotifyBot::Parsers::FlashscoreParser).to receive(:parse).and_return([], 0)
+        # Проблема может быть в формате возвращаемых данных: давайте уточним
+        allow(SportNotifyBot::Parsers::FlashscoreParser).to receive(:parse)
+          .with(max_length: 4096)
+          .and_return([[], 0])  # Возвращаем пустой массив и длину 0
 
-        allow(SportNotifyBot::Parsers::SportsRuParser).to receive(:parse).and_return([
+        sports_data = [
           "<b>Футбол, Россия. Премьер-лига 2023/2024. 24 тур</b>",
           "12:00 - <i>Оренбург (Россия)</i> – : – <i>ЦСКА (Россия)</i>"
-        ], 100)
+        ]
+
+        allow(SportNotifyBot::Parsers::SportsRuParser).to receive(:parse)
+          .with(max_length: instance_of(Integer))
+          .and_return([sports_data, 100])
       end
 
       it "returns only sports data" do
+        # Добавим отладочный вывод, чтобы понять, что происходит
+        begin
+          flash_data, flash_length = SportNotifyBot::Parsers::FlashscoreParser.parse(max_length: 4096)
+          puts "FlashscoreParser мок вернул: #{flash_data.inspect}, #{flash_length}"
+        rescue => e
+          puts "Ошибка при вызове FlashscoreParser: #{e.message}"
+        end
+
+        begin
+          sports_data, sports_length = SportNotifyBot::Parsers::SportsRuParser.parse(max_length: 4096)
+          puts "SportsRuParser мок вернул: #{sports_data.inspect}, #{sports_length}"
+        rescue => e
+          puts "Ошибка при вызове SportsRuParser: #{e.message}"
+        end
+
         result = SportNotifyBot::MessageBuilder.build_message
+        puts "Результат в тесте only sports data: #{result}"
 
         expect(result).to include("Футбол, Россия")
         expect(result).to include("Оренбург (Россия)")
@@ -92,18 +146,26 @@ RSpec.describe SportNotifyBot::MessageBuilder do
           tennis_data << "#{i + 10}:00 - <i>Player #{i * 2}</i> - : - <i>Player #{i * 2 + 1}</i>"
         end
 
-        allow(SportNotifyBot::Parsers::FlashscoreParser).to receive(:parse).and_return(
-          tennis_data, 2100
-        )
+        # Правильная структура возвращаемого значения - массив из двух элементов
+        allow(SportNotifyBot::Parsers::FlashscoreParser).to receive(:parse)
+          .with(max_length: 4096)
+          .and_return([tennis_data, 2100])
 
-        allow(SportNotifyBot::Parsers::SportsRuParser).to receive(:parse).and_return([
+        sports_data = [
           "<b>Футбол, Россия. Премьер-лига 2023/2024. 24 тур</b>",
           "12:00 - <i>Оренбург (Россия)</i> – : – <i>ЦСКА (Россия)</i>"
-        ], 100)
+        ]
+
+        allow(SportNotifyBot::Parsers::SportsRuParser).to receive(:parse)
+          .with(max_length: instance_of(Integer))
+          .and_return([sports_data, 100])
       end
 
       it "limits tennis data to 10 matches" do
         result = SportNotifyBot::MessageBuilder.build_message
+
+        # Добавим отладочный вывод
+        puts "Результат с ограничением тенниса: #{result}"
 
         lines = result.split("\n")
         tennis_section_end = lines.index("") || lines.length

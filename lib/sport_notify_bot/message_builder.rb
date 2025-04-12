@@ -32,8 +32,16 @@ module SportNotifyBot
     def self.parse_tennis(max_length, result, total_length, first_section)
       puts "Парсинг Flashscore (теннис)..."
       begin
-        tennis_data, tennis_length = Parsers::FlashscoreParser.parse(max_length: max_length)
-        if tennis_data.any? && tennis_length > 0 # Проверяем, что есть данные и длина > 0
+        raw_data = Parsers::FlashscoreParser.parse(max_length: max_length)
+
+        # Дополнительная защита от неверного формата данных
+        tennis_data = raw_data[0]
+        tennis_length = raw_data[1]
+        puts "FlashscoreParser вернул: tennis_data=#{tennis_data.class}(#{tennis_data.size}),
+          tennis_length=#{tennis_length.class}(#{tennis_length})"
+
+        # Проверяем что tennis_data это массив и не пустой
+        if tennis_data.is_a?(Array) && !tennis_data.empty? && tennis_length.is_a?(Integer) && tennis_length > 0
           # Если данных тенниса слишком много, ограничим их до первых 10 матчей (или меньше)
           if tennis_length > max_length / 2
             puts "Теннис занимает много места. Ограничиваем до первых 10 матчей."
@@ -91,7 +99,8 @@ module SportNotifyBot
             # Предполагаем, что SportsRuParser.parse возвращает [массив_строк, общая_длина]
             sports_ru_data, sports_ru_length = Parsers::SportsRuParser.parse(max_length: remaining_length)
 
-            if sports_ru_data.any? && sports_ru_length > 0
+            # Проверяем что sports_ru_data это массив и не пустой
+            if sports_ru_data.is_a?(Array) && !sports_ru_data.empty? && sports_ru_length.is_a?(Integer) && sports_ru_length > 0
               if sports_ru_length <= remaining_length
                 puts "Добавляем данные Sports.ru (длина: #{sports_ru_length})."
                 result.concat(sports_ru_data)

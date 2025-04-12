@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "ferrum"
-require "nokogiri" # Убедитесь, что Nokogiri подключен
 
 module SportNotifyBot
   module Parsers
@@ -114,6 +113,26 @@ module SportNotifyBot
         category_text = category_span ? category_span.text.strip : "Теннис"
         tournament_text = tournament_link ? tournament_link.text.strip : "Неизвестный турнир"
 
+        # Извлекаем информацию о месте проведения турнира и поверхности корта
+        if tournament_text.include?(",")
+          parts = tournament_text.split(",")
+          location = parts[1..-1].join(",").strip
+          if location.include?("(") && location.include?(")")
+            # Если уже есть информация о стране в скобках, оставляем как есть
+            tournament_location = location
+          else
+            # Ищем информацию о стране в DOM
+            country_element = first_tournament_header.at_css('.event__title--type')
+            country = country_element ? country_element.text.strip : nil
+            tournament_location = country ? "#{location} (#{country})" : location
+          end
+
+          # Добавляем информацию о поверхности корта, если есть
+          surface_element = first_tournament_header.at_css('.event__title--info')
+          surface = surface_element ? surface_element.text.strip.downcase : nil
+          tournament_text = "#{parts[0]}, #{tournament_location}#{surface ? ", #{surface}" : ""}"
+        end
+
         escaped_category = HtmlFormatter.escape(category_text)
         escaped_tournament = HtmlFormatter.escape(tournament_text)
         header_string = HtmlFormatter.bold("#{escaped_category}, #{escaped_tournament}")
@@ -152,8 +171,20 @@ module SportNotifyBot
           home_player_name_raw = home_player_div ? home_player_div.text.strip : "Игрок 1"
           away_player_name_raw = away_player_div ? away_player_div.text.strip : "Игрок 2"
 
-          escaped_home_player = HtmlFormatter.escape(home_player_name_raw)
-          escaped_away_player = HtmlFormatter.escape(away_player_name_raw)
+          # Извлекаем информацию о флагах (странах) игроков
+          home_flag = match_node.at_css('.event__logo--home')
+          away_flag = match_node.at_css('.event__logo--away')
+
+          # Получаем названия стран из атрибута title флагов
+          home_country = home_flag && home_flag['title'] ? " (#{home_flag['title']})" : ""
+          away_country = away_flag && away_flag['title'] ? " (#{away_flag['title']})" : ""
+
+          # Добавляем страны к именам игроков
+          home_player_with_country = "#{home_player_name_raw}#{home_country}"
+          away_player_with_country = "#{away_player_name_raw}#{away_country}"
+
+          escaped_home_player = HtmlFormatter.escape(home_player_with_country)
+          escaped_away_player = HtmlFormatter.escape(away_player_with_country)
 
           italic_home_player = HtmlFormatter.italic(escaped_home_player)
           italic_away_player = HtmlFormatter.italic(escaped_away_player)

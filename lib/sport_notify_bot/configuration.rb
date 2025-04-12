@@ -23,7 +23,7 @@ module SportNotifyBot
 
     # Проверка наличия обязательных параметров
     def valid?
-      token && chat_id
+      !token.nil? && token.to_s.strip != '' && !chat_id.nil? && chat_id.to_s.strip != ''
     end
 
     # Проверяет обязательные параметры и выбрасывает исключение, если их нет
