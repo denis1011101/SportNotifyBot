@@ -12,6 +12,16 @@ $ bundle install
 $ gem install sport_notify_bot
 ```
 
+Browser Installation
+For parsing Flashscore data, you'll need Chrome or Chromium browser installed:
+
+On Ubuntu/Debian:
+```
+$ sudo apt-get install chromium-browser
+```
+
+The gem will automatically detect the browser location, or you can specify it manually in the .env file with the BROWSER_PATH variable
+
 ## Configuration
 
 Create a .env file in your project root with the following variables:
@@ -19,6 +29,7 @@ Create a .env file in your project root with the following variables:
 ```ruby
 TOKEN=your_telegram_bot_token
 CHAT_ID=your_telegram_chat_id
+BROWSER_PATH=/path/to/chrome/or/chromium  # Optional, auto-detected if not specified
 ```
 
 You can also create a configuration file:
@@ -67,11 +78,26 @@ SportNotifyBot.run
 ## Features
 
 - Fetches football, basketball, hockey, tennis and other sports matches data
-- Tennis matches are parsed from flashscore.com for better accuracy
+- Tennis matches are prioritized and parsed from Flashscore for better accuracy
 - Formats data with proper HTML for Telegram (bold, italic)
+- Smart message length management:
+- If message is too large, tennis data is limited to 10 matches
+- Remaining space is used for other sports data
 - Handles message length limitations (max 4096 characters)
 - Provides proper error handling for network issues
 - Customizable HTTP headers to avoid blocking
+- Automatic Chrome/Chromium browser detection for Flashscore parsing
+
+## Structure
+
+The gem is organized into several components:
+
+- **Parsers**: Contains specialized parsers for different sports websites
+    - FlashscoreParser: Parses tennis data from Flashscore
+    - SportsRuParser: Parses various sports data from Sports.ru
+- **MessageBuilder**: Builds the message from different data sources
+- **MessageFormatter**: Handles message formatting and truncation
+- **TelegramSender**: Sends the formatted message to Telegram
 
 ## Development
 
@@ -79,7 +105,7 @@ After checking out the repo, run setup to install dependencies. Then, run rake t
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/sport_notify_bot. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/[USERNAME]/sport_notify_bot/blob/master/CODE_OF_CONDUCT.md).
+Bug reports and pull requests are welcome on GitHub at https://github.com/denis1011101/sport_notify_bot. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/denis1011101/sport_notify_bot/blob/master/CODE_OF_CONDUCT.md).
 
 ## License
 
@@ -87,4 +113,4 @@ The gem is available as open source under the terms of the [MIT License](https:/
 
 ## Code of Conduct
 
-Everyone interacting in the SportNotifyBot project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/[USERNAME]/sport_notify_bot/blob/master/CODE_OF_CONDUCT.md).
+Everyone interacting in the SportNotifyBot project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/denis1011101/sport_notify_bot/blob/master/CODE_OF_CONDUCT.md).

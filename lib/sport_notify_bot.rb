@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'dotenv/load'
+require "dotenv/load"
 require_relative "sport_notify_bot/version"
 require_relative "sport_notify_bot/configuration"
 require_relative "sport_notify_bot/html_formatter"
