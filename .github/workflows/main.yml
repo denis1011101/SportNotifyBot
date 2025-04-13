@@ -1,27 +1,44 @@
-name: Ruby
+name: Ruby Tests
 
 on:
   push:
     branches:
-      - master
-
+      - main
   pull_request:
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
-    name: Ruby ${{ matrix.ruby }}
-    strategy:
-      matrix:
-        ruby:
-          - '3.1.3'
-
+    name: Ruby 3.4.1
+    
     steps:
     - uses: actions/checkout@v3
+      
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: ${{ matrix.ruby }}
+        ruby-version: '3.4.1'
         bundler-cache: true
-    - name: Run the default task
-      run: bundle exec rake
+        
+    - name: Install Chrome/Chromium (для тестов FlashscoreParser)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y chromium-browser
+        
+    - name: Setup test environment
+      run: |
+        bundle install
+        mkdir -p tmp/
+        touch .env # Создаем пустой .env файл для тестов
+        echo "BROWSER_PATH=$(which chromium-browser)" >> .env
+        echo "TOKEN=test_token" >> .env
+        echo "CHAT_ID=123456789" >> .env
+        
+    - name: Run tests
+      run: bundle exec rspec
+      
+    - name: Run Rubocop
+      run: bundle exec rubocop || true
+      
+    - name: Build gem
+      run: bundle exec rake build

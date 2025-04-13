@@ -1,0 +1,196 @@
+#!/bin/bash
+
+# Настройки - с разумными значениями по умолчанию
+REPO_PATH=${REPO_PATH:-"$HOME/my/sport_notify_bot"}
+LOG_FILE=${LOG_FILE:-"/var/log/webhook_deploy.log"}
+WEBHOOK_SECRET=${WEBHOOK_SECRET:-""}
+BRANCH=${BRANCH:-"main"}
+GITHUB_API_TOKEN=${GITHUB_API_TOKEN:-""}
+GITHUB_REPO=${GITHUB_REPO:-"your_username/sport_notify_bot"}
+
+# Загружаем переменные из .env файла, если он существует
+if [ -f "$REPO_PATH/.env" ]; then
+  source "$REPO_PATH/.env"
+fi
+
+# Проверяем наличие обязательных переменных
+if [ -z "$WEBHOOK_SECRET" ]; then
+  echo "Ошибка: WEBHOOK_SECRET не установлен. Добавьте его в .env файл." >&2
+  exit 1
+fi
+
+# Функция логирования
+log() {
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> $LOG_FILE
+  echo "$1"
+}
+
+# Функция для проверки статуса тестов в CI
+check_ci_status() {
+  # Пропускаем проверку если не установлен токен GitHub API
+  if [ -z "$GITHUB_API_TOKEN" ]; then
+    log "Пропускаем проверку CI: GITHUB_API_TOKEN не установлен"
+    return 0
+  fi
+
+  local commit_sha="$1"
+  local max_attempts=10
+  local sleep_time=30
+  local attempt=1
+  
+  log "Проверяем статус CI для коммита $commit_sha"
+  
+  while [ $attempt -le $max_attempts ]; do
+    log "Попытка $attempt из $max_attempts..."
+    
+    # Получаем статус workflow
+    local status_response=$(curl -s -H "Authorization: token $GITHUB_API_TOKEN" \
+      "https://api.github.com/repos/$GITHUB_REPO/commits/$commit_sha/check-runs")
+    
+    # Проверяем, что все тесты пройдены успешно
+    local success_count=$(echo "$status_response" | grep -c '"conclusion":"success"')
+    local failure_count=$(echo "$status_response" | grep -c '"conclusion":"failure"')
+    local total_count=$(echo "$status_response" | grep -c '"status":')
+    
+    log "CI статус: total=$total_count, success=$success_count, failure=$failure_count"
+    
+    # Проверяем результаты
+    if [ $failure_count -gt 0 ]; then
+      log "Ошибка: CI тесты не прошли для коммита $commit_sha"
+      return 1
+    fi
+    
+    if [ $success_count -gt 0 ]; then
+      log "CI тесты успешно пройдены для коммита $commit_sha"
+      return 0
+    fi
+    
+    log "CI тесты еще выполняются. Ждем $sleep_time секунд..."
+    sleep $sleep_time
+    
+    ((attempt++))
+  done
+  
+  log "Превышено максимальное число попыток проверки CI. Статус неизвестен."
+  return 2
+}
+
+# Функция для проверки подписи
+verify_signature() {
+  local payload="$1"
+  local signature="$2"
+  
+  if [ -z "$signature" ]; then
+    log "Ошибка: отсутствует подпись"
+    return 1
+  fi
+
+  local expected_signature="sha256=$(echo -n "$payload" | openssl sha256 -hmac "$WEBHOOK_SECRET" | cut -d' ' -f2)"
+  
+  if [ "$signature" = "$expected_signature" ]; then
+    return 0  # Подпись верна
+  else
+    log "Ошибка: неверная подпись"
+    return 1  # Подпись неверна
+  fi
+}
+
+# Функция для деплоя (без запуска бота)
+deploy() {
+  local commit_sha="$1"
+  log "Начинаем деплой из ветки $BRANCH, коммит $commit_sha"
+  
+  # Проверяем статус CI перед деплоем
+  if ! check_ci_status "$commit_sha"; then
+    log "Ошибка: Не удалось подтвердить успешное прохождение CI тестов. Деплой отменен."
+    return 1
+  fi
+  
+  cd $REPO_PATH || { log "Ошибка: не удалось перейти в директорию $REPO_PATH"; return 1; }
+  
+  # Сохраняем текущий коммит
+  local current_commit=$(git rev-parse HEAD)
+  
+  # Получаем последние изменения
+  log "Выполняем git pull"
+  git pull origin $BRANCH >> $LOG_FILE 2>&1 || { log "Ошибка: не удалось выполнить git pull"; return 1; }
+  
+  # Проверяем, что мы на нужном коммите
+  local new_commit=$(git rev-parse HEAD)
+  if [ "$new_commit" != "$commit_sha" ]; then
+    log "Предупреждение: После pull HEAD ($new_commit) отличается от ожидаемого коммита ($commit_sha)"
+    # Здесь вы можете решить, продолжать ли деплой или откатиться
+    # git reset --hard "$current_commit"
+    # return 1
+  fi
+  
+  # Устанавливаем зависимости
+  log "Устанавливаем зависимости"
+  bundle install --without development test >> $LOG_FILE 2>&1 || { log "Ошибка: не удалось установить зависимости"; return 1; }
+  
+  log "Деплой успешно завершен. Бот будет запущен по расписанию cron."
+  
+  return 0
+}
+
+# Основной обработчик
+handle_webhook() {
+  # Получаем payload и подпись
+  read -r payload
+
+  # Получаем подпись из заголовка
+  signature=$(echo "$HTTP_X_HUB_SIGNATURE_256")
+  
+  # Проверяем подпись
+  if ! verify_signature "$payload" "$signature"; then
+    echo "Status: 403 Forbidden"
+    echo "Content-Type: text/plain"
+    echo
+    echo "Invalid signature"
+    return
+  fi
+  
+  # Проверяем, что это push в основную ветку
+  ref=$(echo "$payload" | grep -o '"ref":"[^"]*"' | cut -d'"' -f4)
+  
+  if [ "$ref" != "refs/heads/$BRANCH" ]; then
+    log "Пропускаем деплой - это не push в ветку $BRANCH, а в $ref"
+    echo "Status: 200 OK"
+    echo "Content-Type: text/plain"
+    echo
+    echo "Skipped: Not a push to $BRANCH"
+    return
+  fi
+  
+  # Извлекаем SHA последнего коммита
+  commit_sha=$(echo "$payload" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+  
+  if [ -z "$commit_sha" ]; then
+    log "Ошибка: не удалось извлечь SHA коммита из payload"
+    echo "Status: 400 Bad Request"
+    echo "Content-Type: text/plain"
+    echo
+    echo "Failed to extract commit SHA"
+    return
+  fi
+  
+  # Деплоим изменения
+  if deploy "$commit_sha"; then
+    echo "Status: 200 OK"
+    echo "Content-Type: text/plain"
+    echo
+    echo "Deployed successfully"
+  else
+    echo "Status: 500 Internal Server Error"
+    echo "Content-Type: text/plain"
+    echo
+    echo "Deployment failed, check logs"
+  fi
+}
+
+# Настраиваем CGI
+echo "Content-Type: text/plain"
+echo
+
+# Запускаем обработчик в фоне и отключаемся от stdin/stdout
+handle_webhook < /dev/stdin &
