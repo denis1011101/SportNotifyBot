@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+# rubocop:disable Metrics/BlockLength
 
 require "spec_helper"
 require "webmock/rspec"
@@ -101,7 +102,7 @@ RSpec.describe SportNotifyBot::MessageBuilder do
         # Проблема может быть в формате возвращаемых данных: давайте уточним
         allow(SportNotifyBot::Parsers::FlashscoreParser).to receive(:parse)
           .with(max_length: 4096)
-          .and_return([[], 0])  # Возвращаем пустой массив и длину 0
+          .and_return([[], 0]) # Возвращаем пустой массив и длину 0
 
         sports_data = [
           "<b>Футбол, Россия. Премьер-лига 2023/2024. 24 тур</b>",
@@ -118,14 +119,14 @@ RSpec.describe SportNotifyBot::MessageBuilder do
         begin
           flash_data, flash_length = SportNotifyBot::Parsers::FlashscoreParser.parse(max_length: 4096)
           puts "FlashscoreParser мок вернул: #{flash_data.inspect}, #{flash_length}"
-        rescue => e
+        rescue StandardError => e
           puts "Ошибка при вызове FlashscoreParser: #{e.message}"
         end
 
         begin
           sports_data, sports_length = SportNotifyBot::Parsers::SportsRuParser.parse(max_length: 4096)
           puts "SportsRuParser мок вернул: #{sports_data.inspect}, #{sports_length}"
-        rescue => e
+        rescue StandardError => e
           puts "Ошибка при вызове SportsRuParser: #{e.message}"
         end
 
@@ -199,3 +200,4 @@ RSpec.describe SportNotifyBot::MessageBuilder do
     end
   end
 end
+# rubocop:enable Metrics/BlockLength

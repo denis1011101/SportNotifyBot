@@ -30,7 +30,7 @@ module SportNotifyBot
           sport_title_ru = sport_title_element.text.strip
 
           # Пропускаем секцию тенниса, его парсим отдельно
-          next if sport_title_ru.downcase.include?('теннис')
+          next if sport_title_ru.downcase.include?("теннис")
 
           # Обработка других видов спорта
           section_result, section_length = parse_sport_section(
@@ -41,19 +41,15 @@ module SportNotifyBot
           )
 
           # Добавляем результат секции если есть место
-          if section_length <= max_length - total_length
-            result.concat(section_result)
-            total_length += section_length
-            first_section = false
-          else
-            break
-          end
+          break unless section_length <= max_length - total_length
+
+          result.concat(section_result)
+          total_length += section_length
+          first_section = false
         end
 
         [result, total_length]
       end
-
-      private
 
       # Парсинг отдельной секции спорта
       def self.parse_sport_section(sport_section, sport_title_ru, first_section, available_length)
@@ -67,8 +63,8 @@ module SportNotifyBot
         end
 
         # Подготавливаем заголовок
-        escaped_sport_name = HtmlFormatter.escape(sport_title_ru.split('.').first.strip.capitalize)
-        escaped_tournament_name = HtmlFormatter.escape(sport_title_ru.split('.').drop(1).join('.').strip)
+        escaped_sport_name = HtmlFormatter.escape(sport_title_ru.split(".").first.strip.capitalize)
+        escaped_tournament_name = HtmlFormatter.escape(sport_title_ru.split(".").drop(1).join(".").strip)
         section_header = HtmlFormatter.bold("#{escaped_sport_name}, #{escaped_tournament_name}")
 
         # Добавляем заголовок
@@ -93,12 +89,10 @@ module SportNotifyBot
           match_result, match_length = parse_match(match_node)
 
           # Проверяем, есть ли место для этого матча
-          if match_length <= available_length - current_length
-            result << match_result
-            current_length += match_length
-          else
-            break
-          end
+          break unless match_length <= available_length - current_length
+
+          result << match_result
+          current_length += match_length
         end
 
         [result, current_length]
@@ -114,7 +108,6 @@ module SportNotifyBot
         match_string = escaped_time # Начинаем строку
 
         # Логика для обработки команд
-        teams_data = []
         team_nodes = match_node.xpath('.//div[@class="teaser-event__board-player"]')
 
         if team_nodes.length == 2
@@ -125,10 +118,10 @@ module SportNotifyBot
 
           match_string += " - #{teams_data[0]} #{score_parts[0]} : #{score_parts[1]} #{teams_data[1]}"
         else
-          match_string += " - " + HtmlFormatter.escape("Не удалось распарсить команды")
+          match_string += " - #{HtmlFormatter.escape("Не удалось распарсить команды")}"
         end
 
-        [match_string, match_string.length + 1]  # +1 для '\n'
+        [match_string, match_string.length + 1] # +1 для '\n'
       end
 
       # Парсинг информации о командах
@@ -158,9 +151,9 @@ module SportNotifyBot
       # Извлечение информации о стране команды
       def self.extract_country(team_node)
         flag_node = team_node.at_xpath('.//span[contains(@class, "icon-flag")]')
-        return "" unless flag_node && flag_node.has_attribute?('title')
+        return "" unless flag_node&.has_attribute?("title")
 
-        title_attr = flag_node['title'].to_s.strip
+        title_attr = flag_node["title"].to_s.strip
         title_attr.empty? ? "" : title_attr
       end
 
@@ -171,13 +164,13 @@ module SportNotifyBot
 
         return default_scores unless score_element
 
-        score_spans = score_element.xpath('./span')
+        score_spans = score_element.xpath("./span")
         return default_scores unless score_spans.length >= 2
 
         score1_raw = score_spans[0].text
         score2_raw = score_spans[1].text
-        score1_cleaned = score1_raw.strip.gsub(/\s+/, ' ')
-        score2_cleaned = score2_raw.strip.gsub(/\s+/, ' ')
+        score1_cleaned = score1_raw.strip.gsub(/\s+/, " ")
+        score2_cleaned = score2_raw.strip.gsub(/\s+/, " ")
 
         [HtmlFormatter.escape(score1_cleaned), HtmlFormatter.escape(score2_cleaned)]
       end

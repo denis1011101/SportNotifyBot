@@ -3,7 +3,7 @@
 module SportNotifyBot
   # Класс для работы с командной строкой
   class CLI
-    def self.start(args = ARGV)
+    def self.start(args = ARGV) # rubocop:disable Metrics/MethodLength
       case args.first
       when "send", nil
         SportNotifyBot.run

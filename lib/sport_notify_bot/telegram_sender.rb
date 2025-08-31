@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'faraday'
-require 'json'
+require "faraday"
+require "json"
 
 module SportNotifyBot
   # Класс для отправки сообщений в Telegram
@@ -20,10 +20,8 @@ module SportNotifyBot
       send_to_telegram(message_text)
     end
 
-    private
-
     # Отправка сообщения в Telegram API
-    def self.send_to_telegram(message_text)
+    def self.send_to_telegram(message_text) # rubocop:disable Metrics/MethodLength, Metrics/AbcSize
       token = SportNotifyBot.configuration.token
       chat_id = SportNotifyBot.configuration.chat_id
       url = "https://api.telegram.org/bot#{token}/sendMessage"
@@ -31,7 +29,7 @@ module SportNotifyBot
       payload = {
         chat_id: chat_id,
         text: message_text,
-        parse_mode: 'HTML',
+        parse_mode: "HTML",
         disable_web_page_preview: true
       }.to_json
 
@@ -39,11 +37,15 @@ module SportNotifyBot
       begin
         response = Faraday.post(url, payload, "Content-Type" => "application/json")
 
-        response_body = JSON.parse(response.body) rescue { "description" => "Не удалось разобрать ответ Telegram" }
+        response_body = begin
+          JSON.parse(response.body)
+        rescue StandardError
+          { "description" => "Не удалось разобрать ответ Telegram" }
+        end
 
         unless response.success?
           puts "Ошибка при отправке сообщения в Telegram: Статус #{response.status}"
-          puts "Ответ Telegram: #{response_body['description'] || response.body}"
+          puts "Ответ Telegram: #{response_body["description"] || response.body}"
           puts "--- Отправляемый текст (HTML) ---"
           puts message_text # Выводим то, что пытались отправить
           puts "--- Конец текста ---"
@@ -51,7 +53,6 @@ module SportNotifyBot
         end
 
         puts "Сообщение успешно отправлено в чат #{chat_id}."
-
       rescue Faraday::ConnectionFailed => e
         puts "Ошибка соединения с Telegram API: #{e.message}"
       rescue Faraday::TimeoutError => e

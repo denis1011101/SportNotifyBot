@@ -26,15 +26,15 @@ RSpec.describe SportNotifyBot::TelegramSender do
 
     # Stub Telegram API
     @telegram_request = stub_request(:post, "https://api.telegram.org/bot#{token}/sendMessage")
-                       .with(
-                         body: {
-                           chat_id: chat_id,
-                           text: message,
-                           parse_mode: "HTML",
-                           disable_web_page_preview: true
-                         }.to_json,
-                         headers: { "Content-Type" => "application/json" }
-                       )
+                        .with(
+                          body: {
+                            chat_id: chat_id,
+                            text: message,
+                            parse_mode: "HTML",
+                            disable_web_page_preview: true
+                          }.to_json,
+                          headers: { "Content-Type" => "application/json" }
+                        )
   end
 
   describe ".send_message" do

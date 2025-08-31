@@ -8,6 +8,8 @@ on:
 jobs:
   send:
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository_owner }}/sport-notify-bot-ci:latest
     name: Send daily message
     concurrency:
       group: daily-send
@@ -15,24 +17,10 @@ jobs:
     env:
       TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
       CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      BROWSER_PATH: /usr/bin/chromium-browser
     steps:
       - uses: actions/checkout@v3
-
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.4.5'
-          bundler-cache: true
-
-      - name: Install Chromium (for FlashscoreParser)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y chromium-browser
-          echo "BROWSER_PATH=$(which chromium-browser)" >> "$GITHUB_ENV"
-
+      - name: Bundle install
+        run: bundle install --quiet
       - name: Run sender
-        env:
-          BROWSER_PATH: ${{ env.BROWSER_PATH }}
-        run: |
-          bundle install --quiet
-          bundle exec ./exe/sport_notify_bot send
+        run: bundle exec ./exe/sport_notify_bot send

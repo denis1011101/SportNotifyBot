@@ -60,9 +60,9 @@ RSpec.describe SportNotifyBot::MessageFormatter do
 
         # Count opening and closing tags
         open_b = result.scan(/<b>/).length
-        close_b = result.scan(/<\/b>/).length
+        close_b = result.scan(%r{</b>}).length
         open_i = result.scan(/<i>/).length
-        close_i = result.scan(/<\/i>/).length
+        close_i = result.scan(%r{</i>}).length
 
         # Tags should be balanced
         expect(open_b).to eq(close_b)

@@ -9,10 +9,8 @@ module SportNotifyBot
         raise NotImplementedError, "#{name}#parse не реализован"
       end
 
-      private
-
       # Общий метод для запроса страницы
-      def self.fetch_page(url, error_message = "Не удалось загрузить данные")
+      def self.fetch_page(url, error_message = "Не удалось загрузить данные") # rubocop:disable Metrics/MethodLength
         response = Faraday.get(url)
         unless response.success?
           error_msg = HtmlFormatter.escape("#{error_message} (Статус: #{response.status}).")
