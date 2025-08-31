@@ -2,7 +2,7 @@ name: Daily Send
 
 on:
   schedule:
-    - cron: "0 8 * * *"
+    - cron: "30 23 * * *"  # 2:30 по Аланье (UTC+3) = 23:30 UTC
   workflow_dispatch:
 
 jobs:
@@ -18,27 +18,18 @@ jobs:
       TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
       CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       BROWSER_PATH: /usr/bin/chromium-browser
+      BUNDLE_BUILD__NOKOGIRI: "--use-system-libraries"
     steps:
-      - name: Download source code directly
-        run: |
-          cd /tmp
-          wget -qO repo.tar.gz https://api.github.com/repos/${{ github.repository }}/tarball/${{ github.ref_name }}
-          mkdir -p /work
-          tar -xzf repo.tar.gz -C /work --strip-components=1
-          cd /work
-          ls -la
-          
-      - name: Install gems directly
-        run: |
-          cd /work
-          gem install nokogiri -v ">= 1.15" --platform=ruby --no-document
-          gem install base64 -v "~> 0.2.0" --no-document
-          gem install dotenv -v "~> 3.1.8" --no-document
-          gem install faraday -v "~> 2.13.0" --no-document
-          gem install ferrum -v "~> 0.16" --no-document
-      
+      - uses: actions/checkout@v3
+
+      - name: Fix git safe.directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Add container platform to lockfile
+        run: bundle lock --add-platform x86_64-linux-musl
+
+      - name: Bundle install
+        run: bundle install --jobs 4 --retry 3 --quiet
+
       - name: Run sender
-        working-directory: /work
-        run: |
-          ruby -e 'puts "Ruby версия: #{RUBY_VERSION}"'
-          ruby -I lib exe/sport_notify_bot send
+        run: bundle exec ./exe/sport_notify_bot send
