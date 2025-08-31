@@ -9,7 +9,10 @@ RUN apk add --no-cache \
     ca-certificates \
     git \
     build-base \
-    tzdata
+    libxml2-dev \
+    libxslt-dev \
+    tzdata \
+    libstdc++
 
 ENV BROWSER_PATH=/usr/bin/chromium-browser
 WORKDIR /work
