@@ -11,6 +11,7 @@ RUN apk add --no-cache \
     build-base \
     libxml2-dev \
     libxslt-dev \
+    pkgconfig \
     tzdata \
     libstdc++
 

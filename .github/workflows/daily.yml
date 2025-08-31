@@ -2,7 +2,7 @@ name: Daily Send
 
 on:
   schedule:
-    - cron: "30 23 * * *"  # 2:30 по Аланье (UTC+3) = 23:30 UTC
+    - cron: "0 8 * * *"
   workflow_dispatch:
 
 jobs:
@@ -18,15 +18,27 @@ jobs:
       TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
       CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       BROWSER_PATH: /usr/bin/chromium-browser
+      BUNDLE_FORCE_RUBY_PLATFORM: "true"
       BUNDLE_BUILD__NOKOGIRI: "--use-system-libraries"
     steps:
       - uses: actions/checkout@v3
 
       - name: Fix git safe.directory
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+        run: |
+          git config --global --add safe.directory '*'
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config --global --add safe.directory "/__w/${{ github.event.repository.name }}/${{ github.event.repository.name }}"
 
-      - name: Add container platform to lockfile
-        run: bundle lock --add-platform x86_64-linux-musl
+      - name: Install build deps for nokogiri (Alpine)
+        run: |
+          apk update && apk add --no-cache build-base libxml2-dev libxslt-dev pkgconfig
+
+      - name: Prepare bundler
+        run: |
+          bundle config set path 'vendor/bundle'
+          bundle config set without 'development test'
+          bundle config set force_ruby_platform true
+          bundle lock --add-platform x86_64-linux x86_64-linux-gnu x86_64-linux-musl || true
 
       - name: Bundle install
         run: bundle install --jobs 4 --retry 3 --quiet
