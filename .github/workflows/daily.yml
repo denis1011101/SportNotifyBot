@@ -2,7 +2,7 @@ name: Daily Send
 
 on:
   schedule:
-    - cron: "0 8 * * *"  # 08:00 UTC == 13:00 Asia/Yekaterinburg
+    - cron: "0 8 * * *"
   workflow_dispatch:
 
 jobs:
@@ -20,6 +20,8 @@ jobs:
       BROWSER_PATH: /usr/bin/chromium-browser
     steps:
       - uses: actions/checkout@v3
+      - name: Mark workspace as safe for git
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Bundle install
         run: bundle install --quiet
       - name: Run sender
