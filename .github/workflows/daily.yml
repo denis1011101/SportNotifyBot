@@ -2,7 +2,7 @@ name: Daily Send
 
 on:
   schedule:
-    - cron: "40 23 * * *"  # 2:40 по Аланье (UTC+3) = 23:40 UTC
+    - cron: "0 13 * * *"  # 18:00 по Екатеринбургу (UTC+5) = 13:00 UTC
   workflow_dispatch:
 
 jobs:
