@@ -18,30 +18,27 @@ jobs:
       TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
       CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       BROWSER_PATH: /usr/bin/chromium-browser
-      BUNDLE_FORCE_RUBY_PLATFORM: "true"
-      BUNDLE_BUILD__NOKOGIRI: "--use-system-libraries"
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Fix git safe.directory
+      - name: Download source code directly
         run: |
-          git config --global --add safe.directory '*'
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          git config --global --add safe.directory "/__w/${{ github.event.repository.name }}/${{ github.event.repository.name }}"
-
-      - name: Install build deps for nokogiri (Alpine)
+          cd /tmp
+          wget -qO repo.tar.gz https://api.github.com/repos/${{ github.repository }}/tarball/${{ github.ref_name }}
+          mkdir -p /work
+          tar -xzf repo.tar.gz -C /work --strip-components=1
+          cd /work
+          ls -la
+          
+      - name: Install gems directly
         run: |
-          apk update && apk add --no-cache build-base libxml2-dev libxslt-dev pkgconfig
-
-      - name: Prepare bundler
-        run: |
-          bundle config set path 'vendor/bundle'
-          bundle config set without 'development test'
-          bundle config set force_ruby_platform true
-          bundle lock --add-platform x86_64-linux x86_64-linux-gnu x86_64-linux-musl || true
-
-      - name: Bundle install
-        run: bundle install --jobs 4 --retry 3 --quiet
-
+          cd /work
+          gem install nokogiri -v ">= 1.15" --platform=ruby --no-document
+          gem install base64 -v "~> 0.2.0" --no-document
+          gem install dotenv -v "~> 3.1.8" --no-document
+          gem install faraday -v "~> 2.13.0" --no-document
+          gem install ferrum -v "~> 0.16" --no-document
+      
       - name: Run sender
-        run: bundle exec ./exe/sport_notify_bot send
+        working-directory: /work
+        run: |
+          ruby -e 'puts "Ruby версия: #{RUBY_VERSION}"'
+          ruby -I lib exe/sport_notify_bot send
