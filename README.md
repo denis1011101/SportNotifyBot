@@ -103,6 +103,25 @@ The gem is organized into several components:
 
 After checking out the repo, run setup to install dependencies. Then, run rake test to run the tests. You can also run console for an interactive prompt.
 
+## Deployment / CI
+
+- CI image: built by `.github/workflows/build_image.yml` and pushed to
+  `ghcr.io/<owner>/sport-notify-bot-ci:latest`.
+- Scheduler: `.github/workflows/daily.yml` pulls the CI image and runs the bot.
+
+Required repository Secrets (Settings → Secrets and variables → Actions)
+- TELEGRAM_TOKEN — Telegram bot token (e.g. 123456:ABC...).
+- TELEGRAM_CHAT_ID — target chat id or `@channel`.
+
+Optional (only if GITHUB_TOKEN cannot push to GHCR)
+- GHCR_PAT — personal access token with `packages:write`.
+
+How to trigger
+- Rebuild image: push to `main` touching `Dockerfile` or Actions → Build CI image → Run workflow.
+- Run daily job manually: Actions → Daily Send → Run workflow.
+
+Rebuild the CI image after changing `Dockerfile` or system/native dependencies (e.g. nokogiri).
+
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/denis1011101/sport_notify_bot. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/denis1011101/sport_notify_bot/blob/master/CODE_OF_CONDUCT.md).
