@@ -9,21 +9,23 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/${{ github.repository_owner }}/sport-notify-bot-ci:latest
-    permissions:
-      packages: read
     name: Ruby 4.0.1
     
     steps:
-    - uses: actions/checkout@v3
-    - name: Install gems
-      run: bundle install --jobs 4 --retry 3
+    - uses: actions/checkout@v4
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: "4.0.1"
+        bundler-cache: true
+    - name: Set up Chrome
+      id: setup-chrome
+      uses: browser-actions/setup-chrome@v1
     - name: Setup test environment
       run: |
         mkdir -p tmp/
         touch .env
-        echo "BROWSER_PATH=/usr/bin/chromium-browser" >> .env
+        echo "BROWSER_PATH=${{ steps.setup-chrome.outputs.chrome-path }}" >> .env
         echo "TOKEN=test_token" >> .env
         echo "CHAT_ID=123456789" >> .env
     - name: Run tests
