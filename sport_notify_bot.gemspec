@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
   spec.description = "bot for send notifications about sport matches"
   spec.homepage = "https://www.github.com/"
   spec.license = "MIT"
-  spec.required_ruby_version = "3.4.5"
+  spec.required_ruby_version = "4.0.1"
 
   spec.metadata["allowed_push_host"] = "https://www.github.com/"
 
