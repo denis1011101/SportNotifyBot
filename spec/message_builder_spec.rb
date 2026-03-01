@@ -15,6 +15,7 @@ RSpec.describe SportNotifyBot::MessageBuilder do
     allow(SportNotifyBot::HtmlFormatter).to receive(:escape) { |text| text }
     allow(SportNotifyBot::HtmlFormatter).to receive(:bold) { |text| "<b>#{text}</b>" }
     allow(SportNotifyBot::HtmlFormatter).to receive(:italic) { |text| "<i>#{text}</i>" }
+    allow(SportNotifyBot::TennisGistPublisher).to receive(:publish)
   end
 
   describe ".build_message" do
@@ -62,6 +63,7 @@ RSpec.describe SportNotifyBot::MessageBuilder do
         # Проверяем количество вызовов
         expect(SportNotifyBot::Parsers::FlashscoreParser).to have_received(:parse).once
         expect(SportNotifyBot::Parsers::SportsRuParser).to have_received(:parse).once
+        expect(SportNotifyBot::TennisGistPublisher).to have_received(:publish).with(tennis_data).once
       end
     end
 

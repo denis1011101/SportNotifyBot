@@ -30,6 +30,10 @@ Create a .env file in your project root with the following variables:
 TOKEN=your_telegram_bot_token
 CHAT_ID=your_telegram_chat_id
 BROWSER_PATH=/path/to/chrome/or/chromium  # Optional, auto-detected if not specified
+TENNIS_GIST_TOKEN=github_pat_xxx          # Optional, for tennis export to gist
+TENNIS_GIST_ID=your_public_gist_id        # Optional, existing gist id to update
+TENNIS_GIST_FILENAME=tennis_events.txt    # Optional, file name inside gist
+TENNIS_GIST_RAISE_ERRORS=0                # Optional, set 1 to fail run on gist errors
 ```
 
 You can also create a configuration file:
@@ -79,6 +83,7 @@ SportNotifyBot.run
 
 - Fetches football, basketball, hockey, tennis and other sports matches data
 - Tennis matches are prioritized and parsed from Flashscore for better accuracy
+- Optional export of only tennis events to a GitHub Gist (for cross-machine sync)
 - Formats data with proper HTML for Telegram (bold, italic)
 - Smart message length management:
 - If message is too large, tennis data is limited to 10 matches
@@ -103,24 +108,17 @@ The gem is organized into several components:
 
 After checking out the repo, run setup to install dependencies. Then, run rake test to run the tests. You can also run console for an interactive prompt.
 
-## Deployment / CI
+## Deployment
 
-- CI image: built by `.github/workflows/build_image.yml` and pushed to
-  `ghcr.io/<owner>/sport-notify-bot-ci:latest`.
-- Scheduler: `.github/workflows/daily.yml` pulls the CI image and runs the bot.
+This project is intended to run directly on your machine/server (without Docker and GitHub Actions).
 
-Required repository Secrets (Settings → Secrets and variables → Actions)
-- TELEGRAM_TOKEN — Telegram bot token (e.g. 123456:ABC...).
-- TELEGRAM_CHAT_ID — target chat id or `@channel`.
+Run manually:
 
-Optional (only if GITHUB_TOKEN cannot push to GHCR)
-- GHCR_PAT — personal access token with `packages:write`.
+```bash
+bundle exec sport_notify_bot send
+```
 
-How to trigger
-- Rebuild image: push to `main` touching `Dockerfile` or Actions → Build CI image → Run workflow.
-- Run daily job manually: Actions → Daily Send → Run workflow.
-
-Rebuild the CI image after changing `Dockerfile` or system/native dependencies (e.g. nokogiri).
+If you need scheduled runs, use your OS scheduler (for example `cron` or `systemd timers`).
 
 ## Contributing
 

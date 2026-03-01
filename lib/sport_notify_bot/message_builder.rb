@@ -46,6 +46,7 @@ module SportNotifyBot
             puts "Теннис ограничен до #{matches.length} матчей (длина: #{tennis_length})."
           end
 
+          TennisGistPublisher.publish(tennis_data)
           puts "Добавляем данные Flashscore (длина: #{tennis_length})."
           result.concat(tennis_data)
           total_length += tennis_length
