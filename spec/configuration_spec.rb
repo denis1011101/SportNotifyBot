@@ -64,13 +64,13 @@ RSpec.describe SportNotifyBot::Configuration do
     end
   end
 
-  describe "tennis gist settings" do
-    it "has default filename for tennis gist export" do
-      expect(config.tennis_gist_filename).to eq(SportNotifyBot::Configuration::DEFAULT_TENNIS_GIST_FILENAME)
+  describe "data gist settings" do
+    it "has default filename for full snapshot gist export" do
+      expect(config.data_gist_filename).to eq(SportNotifyBot::Configuration::DEFAULT_DATA_GIST_FILENAME)
     end
 
     it "does not raise gist errors by default" do
-      expect(config.tennis_gist_raise_errors).to be(false)
+      expect(config.data_gist_raise_errors).to be(false)
     end
   end
 end

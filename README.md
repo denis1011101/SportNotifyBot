@@ -30,11 +30,13 @@ Create a .env file in your project root with the following variables:
 TOKEN=your_telegram_bot_token
 CHAT_ID=your_telegram_chat_id
 BROWSER_PATH=/path/to/chrome/or/chromium  # Optional, auto-detected if not specified
-TENNIS_GIST_TOKEN=github_pat_xxx          # Optional, for tennis export to gist
-TENNIS_GIST_ID=your_public_gist_id        # Optional, existing gist id to update
-TENNIS_GIST_FILENAME=tennis_events.txt    # Optional, file name inside gist
-TENNIS_GIST_RAISE_ERRORS=0                # Optional, set 1 to fail run on gist errors
+DATA_GIST_TOKEN=github_pat_xxx            # Optional, token for updating gist snapshot
+DATA_GIST_ID=your_public_gist_id          # Optional, existing gist id to update/read
+DATA_GIST_FILENAME=sport_events.txt       # Optional, file name inside gist
+DATA_GIST_RAISE_ERRORS=0                  # Optional, set 1 to fail run on gist errors
 ```
+
+Backward compatibility is kept for old names: `TENNIS_GIST_*` still work as fallback.
 
 You can also create a configuration file:
 
@@ -56,6 +58,8 @@ Run the bot to send sports notifications to your configured Telegram chat:
 
 ```ruby
 $ sport_notify_bot send
+$ sport_notify_bot send_chat
+$ sport_notify_bot sync_gist
 ```
 
 View version information:
@@ -83,7 +87,7 @@ SportNotifyBot.run
 
 - Fetches football, basketball, hockey, tennis and other sports matches data
 - Tennis matches are prioritized and parsed from Flashscore for better accuracy
-- Optional export of only tennis events to a GitHub Gist (for cross-machine sync)
+- Optional export of full parsed snapshot to a GitHub Gist (for cross-machine sync)
 - Formats data with proper HTML for Telegram (bold, italic)
 - Smart message length management:
 - If message is too large, tennis data is limited to 10 matches
@@ -115,10 +119,23 @@ This project is intended to run directly on your machine/server (without Docker 
 Run manually:
 
 ```bash
-bundle exec sport_notify_bot send
+./scripts/start.sh send
 ```
 
 If you need scheduled runs, use your OS scheduler (for example `cron` or `systemd timers`).
+
+Recommended crontab for your case (Yekaterinburg time):
+
+```cron
+CRON_TZ=Asia/Yekaterinburg
+0 3 * * * /bin/bash -l -c 'cd /root/apps/SportNotifyBot && ./scripts/start.sh sync_gist >> /root/apps/SportNotifyBot/logs/cron.log 2>&1'
+30 13 * * * /bin/bash -l -c 'cd /root/apps/SportNotifyBot && ./scripts/start.sh send_chat >> /root/apps/SportNotifyBot/logs/cron.log 2>&1'
+```
+
+Поведение команд:
+- `sync_gist`: парсит все источники и сохраняет полный снапшот в gist (без Telegram).
+- `send_chat`: читает снапшот из gist и отправляет его в Telegram (без онлайн-парсинга).
+- `send`: парсит все источники, обновляет gist и сразу отправляет в Telegram.
 
 ## Contributing
 

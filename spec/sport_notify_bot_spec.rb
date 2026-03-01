@@ -36,5 +36,19 @@ RSpec.describe SportNotifyBot do
     end
   end
 
+  describe ".send_chat_only" do
+    it "calls TelegramSender.send_message_from_gist" do
+      expect(SportNotifyBot::TelegramSender).to receive(:send_message_from_gist)
+      SportNotifyBot.send_chat_only
+    end
+  end
+
+  describe ".sync_gist" do
+    it "calls MessageBuilder.build_message with gist publication enabled" do
+      expect(SportNotifyBot::MessageBuilder).to receive(:build_message).with(publish_data_gist: true)
+      SportNotifyBot.sync_gist
+    end
+  end
+
   # Тест для create_http_client, если такой метод есть
 end

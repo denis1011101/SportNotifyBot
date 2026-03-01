@@ -20,6 +20,7 @@ RSpec.describe SportNotifyBot::TelegramSender do
 
     # Setup MessageBuilder double
     allow(SportNotifyBot::MessageBuilder).to receive(:build_message).and_return(message)
+    allow(SportNotifyBot::GistDataStore).to receive(:fetch).and_return(message)
 
     # Setup MessageFormatter pass-through
     allow(SportNotifyBot::MessageFormatter).to receive(:truncate_message) { |msg| msg }
@@ -77,6 +78,19 @@ RSpec.describe SportNotifyBot::TelegramSender do
       it "handles network errors gracefully" do
         expect { SportNotifyBot::TelegramSender.send_message }.not_to raise_error
       end
+    end
+  end
+
+  describe ".send_message_from_gist" do
+    it "sends message loaded from gist to Telegram API" do
+      SportNotifyBot::TelegramSender.send_message_from_gist
+      expect(@telegram_request).to have_been_requested
+    end
+
+    it "does not send when gist data is empty" do
+      allow(SportNotifyBot::GistDataStore).to receive(:fetch).and_return("")
+      SportNotifyBot::TelegramSender.send_message_from_gist
+      expect(@telegram_request).not_to have_been_requested
     end
   end
 end

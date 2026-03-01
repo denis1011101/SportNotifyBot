@@ -7,12 +7,26 @@ module SportNotifyBot
   # Класс для отправки сообщений в Telegram
   class TelegramSender
     # Метод для отправки собранного сообщения в Telegram
-    def self.send_message
+    def self.send_message(publish_data_gist: true)
       SportNotifyBot.configuration.validate!
 
-      message_text = MessageBuilder.build_message
+      message_text = MessageBuilder.build_message(publish_data_gist: publish_data_gist)
       if message_text.nil? || message_text.strip.empty?
         puts "Сообщение для отправки пустое, отправка отменена."
+        return
+      end
+
+      message_text = MessageFormatter.truncate_message(message_text)
+      send_to_telegram(message_text)
+    end
+
+    # Отправка сообщения в Telegram из заранее сохраненного gist
+    def self.send_message_from_gist
+      SportNotifyBot.configuration.validate!
+
+      message_text = GistDataStore.fetch
+      if message_text.nil? || message_text.strip.empty?
+        puts "Данные в gist отсутствуют, отправка в Telegram отменена."
         return
       end
 

@@ -8,11 +8,11 @@ require "json"
 module SportNotifyBot
   # Класс для хранения конфигурационных параметров
   class Configuration
-    DEFAULT_TENNIS_GIST_FILENAME = "tennis_events.txt"
+    DEFAULT_DATA_GIST_FILENAME = "sport_events.txt"
 
     attr_accessor :token, :chat_id, :http_headers, :max_message_length,
-                  :tennis_gist_token, :tennis_gist_id, :tennis_gist_filename,
-                  :tennis_gist_raise_errors
+                  :data_gist_token, :data_gist_id, :data_gist_filename,
+                  :data_gist_raise_errors
 
     DEFAULT_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " \
                  "AppleWebKit/537.36 (KHTML, like Gecko) " \
@@ -21,11 +21,11 @@ module SportNotifyBot
     def initialize
       @token = ENV["TOKEN"]
       @chat_id = ENV["CHAT_ID"]
-      @tennis_gist_token = ENV["TENNIS_GIST_TOKEN"]
-      @tennis_gist_id = ENV["TENNIS_GIST_ID"]
-      raw_gist_filename = ENV["TENNIS_GIST_FILENAME"].to_s.strip
-      @tennis_gist_filename = raw_gist_filename.empty? ? DEFAULT_TENNIS_GIST_FILENAME : raw_gist_filename
-      @tennis_gist_raise_errors = ENV["TENNIS_GIST_RAISE_ERRORS"] == "1"
+      @data_gist_token = ENV["DATA_GIST_TOKEN"] || ENV["TENNIS_GIST_TOKEN"]
+      @data_gist_id = ENV["DATA_GIST_ID"] || ENV["TENNIS_GIST_ID"]
+      raw_gist_filename = (ENV["DATA_GIST_FILENAME"] || ENV["TENNIS_GIST_FILENAME"]).to_s.strip
+      @data_gist_filename = raw_gist_filename.empty? ? DEFAULT_DATA_GIST_FILENAME : raw_gist_filename
+      @data_gist_raise_errors = (ENV["DATA_GIST_RAISE_ERRORS"] || ENV["TENNIS_GIST_RAISE_ERRORS"]) == "1"
       @max_message_length = 4096 # Максимальная длина сообщения в Telegram
       @http_headers = {
         "User-Agent" => DEFAULT_UA,

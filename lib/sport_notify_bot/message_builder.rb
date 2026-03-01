@@ -4,7 +4,7 @@ module SportNotifyBot
   # Класс для сборки текстового сообщения из различных источников данных
   class MessageBuilder # rubocop:disable Metrics/ClassLength
     # Сборка сообщения из данных всех парсеров с приоритетом тенниса
-    def self.build_message(max_length: SportNotifyBot.configuration.max_message_length) # rubocop:disable Metrics/MethodLength
+    def self.build_message(max_length: SportNotifyBot.configuration.max_message_length, publish_data_gist: false) # rubocop:disable Metrics/MethodLength
       result = []
       total_length = 0
       first_section = true
@@ -22,7 +22,9 @@ module SportNotifyBot
       total_length = sports_ru_result[:total_length]
 
       puts "Итоговая длина сообщения перед join: #{total_length}"
-      result.join("\n")
+      message = result.join("\n")
+      GistDataStore.publish(message) if publish_data_gist
+      message
     end
 
     def self.parse_tennis(max_length, result, total_length, first_section) # rubocop:disable Metrics/MethodLength, Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
@@ -46,7 +48,6 @@ module SportNotifyBot
             puts "Теннис ограничен до #{matches.length} матчей (длина: #{tennis_length})."
           end
 
-          TennisGistPublisher.publish(tennis_data)
           puts "Добавляем данные Flashscore (длина: #{tennis_length})."
           result.concat(tennis_data)
           total_length += tennis_length

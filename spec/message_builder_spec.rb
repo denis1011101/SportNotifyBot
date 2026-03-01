@@ -15,7 +15,7 @@ RSpec.describe SportNotifyBot::MessageBuilder do
     allow(SportNotifyBot::HtmlFormatter).to receive(:escape) { |text| text }
     allow(SportNotifyBot::HtmlFormatter).to receive(:bold) { |text| "<b>#{text}</b>" }
     allow(SportNotifyBot::HtmlFormatter).to receive(:italic) { |text| "<i>#{text}</i>" }
-    allow(SportNotifyBot::TennisGistPublisher).to receive(:publish)
+    allow(SportNotifyBot::GistDataStore).to receive(:publish)
   end
 
   describe ".build_message" do
@@ -63,7 +63,24 @@ RSpec.describe SportNotifyBot::MessageBuilder do
         # Проверяем количество вызовов
         expect(SportNotifyBot::Parsers::FlashscoreParser).to have_received(:parse).once
         expect(SportNotifyBot::Parsers::SportsRuParser).to have_received(:parse).once
-        expect(SportNotifyBot::TennisGistPublisher).to have_received(:publish).with(tennis_data).once
+        expect(SportNotifyBot::GistDataStore).not_to have_received(:publish)
+      end
+    end
+
+    context "when gist publication is enabled" do
+      it "publishes full message snapshot to gist" do
+        allow(SportNotifyBot::Parsers::FlashscoreParser).to receive(:parse)
+          .with(max_length: 4096)
+          .and_return([["<b>ATP</b>", "10:00 - <i>A</i> : <i>B</i>"], 30])
+        allow(SportNotifyBot::Parsers::SportsRuParser).to receive(:parse)
+          .with(max_length: instance_of(Integer))
+          .and_return([["<b>Футбол</b>", "12:00 - <i>C</i> : <i>D</i>"], 30])
+
+        result = SportNotifyBot::MessageBuilder.build_message(publish_data_gist: true)
+
+        expect(result).to include("<b>ATP</b>")
+        expect(result).to include("<b>Футбол</b>")
+        expect(SportNotifyBot::GistDataStore).to have_received(:publish).with(result).once
       end
     end
 

@@ -7,7 +7,7 @@ require_relative "sport_notify_bot/html_formatter"
 require_relative "sport_notify_bot/parsers/base_parser"
 require_relative "sport_notify_bot/parsers/sports_ru_parser"
 require_relative "sport_notify_bot/parsers/flashscore_parser"
-require_relative "sport_notify_bot/tennis_gist_publisher"
+require_relative "sport_notify_bot/gist_data_store"
 require_relative "sport_notify_bot/telegram_sender"
 require_relative "sport_notify_bot/message_formatter"
 require_relative "sport_notify_bot/message_builder"
@@ -36,6 +36,21 @@ module SportNotifyBot
     # Запуск основного функционала
     def run
       TelegramSender.send_message
+    end
+
+    # Отправка в Telegram из данных в gist (без онлайн-парсинга)
+    def send_chat_only
+      TelegramSender.send_message_from_gist
+    end
+
+    # Сбор данных и публикация полного снапшота в gist без отправки в Telegram
+    def sync_gist
+      MessageBuilder.build_message(publish_data_gist: true)
+    end
+
+    # Совместимость со старой командой
+    def sync_tennis_gist
+      sync_gist
     end
 
     # Создание клиента HTTP
