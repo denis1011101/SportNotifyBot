@@ -9,3 +9,4 @@
 /.env.test/
 /.env
 /bin/
+/logs/
