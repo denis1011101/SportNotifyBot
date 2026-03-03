@@ -157,13 +157,8 @@ module SportNotifyBot
           home_player_name_raw = home_player_div ? home_player_div.text.strip : "Игрок 1"
           away_player_name_raw = away_player_div ? away_player_div.text.strip : "Игрок 2"
 
-          home_flag = match_node.at_css(".event__logo--home")
-          away_flag = match_node.at_css(".event__logo--away")
-          home_country = home_flag && home_flag["title"] ? " (#{home_flag["title"]})" : ""
-          away_country = away_flag && away_flag["title"] ? " (#{away_flag["title"]})" : ""
-
-          escaped_home = HtmlFormatter.escape("#{home_player_name_raw}#{home_country}")
-          escaped_away = HtmlFormatter.escape("#{away_player_name_raw}#{away_country}")
+          escaped_home = HtmlFormatter.escape(home_player_name_raw)
+          escaped_away = HtmlFormatter.escape(away_player_name_raw)
         end
 
         italic_home = HtmlFormatter.italic(escaped_home)
