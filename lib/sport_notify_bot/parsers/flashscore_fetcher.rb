@@ -11,7 +11,7 @@ module SportNotifyBot
       class Timeout < StandardError; end
       class FetchError < StandardError; end
 
-      FLASHSCORE_TENNIS_URL = "https://www.flashscore.com.ua/tennis/"
+      FLASHSCORE_TENNIS_URL = "https://www.flashscore.com/tennis/"
       FIRST_TOURNAMENT_HEADER_SELECTOR = 'div.sportName.tennis [data-testid="wcl-headerLeague"]'
 
       def self.fetch_tennis_doc
@@ -47,7 +47,7 @@ module SportNotifyBot
         puts "Ищем элемент по селектору: #{selector}"
         loop do
           break if Time.now - start_time >= timeout
-          
+
           element_exists = browser.evaluate("!!document.querySelector('#{selector}')")
           if element_exists
             puts "Элемент найден!"

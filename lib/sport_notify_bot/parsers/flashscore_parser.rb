@@ -11,6 +11,8 @@ module SportNotifyBot
       TOURNAMENT_TITLE_SELECTOR = 'a.headerLeague__title strong[data-testid="wcl-scores-simple-text-01"], a.headerLeague__title'
       MATCH_SELECTOR_CLASS = "event__match"
 
+      MAX_MATCHES_PER_TOURNAMENT = 5
+
       def self.parse(max_length: SportNotifyBot.configuration.max_message_length) # rubocop:disable Metrics/MethodLength, Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
         result = []
         current_length = 0
@@ -47,7 +49,7 @@ module SportNotifyBot
           title_node = tournament_header.at_css(TOURNAMENT_TITLE_SELECTOR) ||
                        tournament_header.at_xpath(FIRST_TOURNAMENT_WRAPPER_XPATH)&.at_css(TOURNAMENT_TITLE_SELECTOR)
 
-          category_text = category_span ? category_span.text.gsub(/\s*:\s*$/, "").strip : "Теннис"
+          category_text = category_span ? category_span.text.gsub(/[\s\u00a0]*:[\s\u00a0]*$/, "").strip : "Теннис"
           tournament_text = title_node ? title_node.text.strip : "Неизвестный турнир"
 
           if tournament_text.include?(",")
@@ -91,6 +93,8 @@ module SportNotifyBot
             nxt = node.next_element
 
             if node["class"]&.include?(MATCH_SELECTOR_CLASS)
+              break if matches_added >= MAX_MATCHES_PER_TOURNAMENT
+
               match_string = build_match_line(node)
               line_len = match_string.length + 1
               if current_length + line_len > max_length
@@ -161,6 +165,9 @@ module SportNotifyBot
           escaped_away = HtmlFormatter.escape(away_player_name_raw)
         end
 
+        home_flag = country_flag(match_node, "home")
+        away_flag = country_flag(match_node, "away")
+
         italic_home = HtmlFormatter.italic(escaped_home)
         italic_away = HtmlFormatter.italic(escaped_away)
 
@@ -171,7 +178,50 @@ module SportNotifyBot
         escaped_score_home = HtmlFormatter.escape(score_home_raw)
         escaped_score_away = HtmlFormatter.escape(score_away_raw)
 
-        "#{escaped_time} - #{italic_home} #{escaped_score_home} : #{escaped_score_away} #{italic_away}"
+        home_display = home_flag ? "#{home_flag} #{italic_home}" : italic_home
+        away_display = away_flag ? "#{away_flag} #{italic_away}" : italic_away
+
+        "#{escaped_time} - #{home_display} #{escaped_score_home} : #{escaped_score_away} #{away_display}"
+      end
+
+      COUNTRY_TO_ISO = {
+        "Algeria" => "DZ", "Andorra" => "AD", "Argentina" => "AR", "Armenia" => "AM",
+        "Australia" => "AU", "Austria" => "AT", "Barbados" => "BB", "Belarus" => "BY",
+        "Belgium" => "BE", "Bolivia" => "BO", "Bosnia and Herzegovina" => "BA",
+        "Brazil" => "BR", "Bulgaria" => "BG", "Canada" => "CA", "Chile" => "CL",
+        "China" => "CN", "Colombia" => "CO", "Costa Rica" => "CR", "Croatia" => "HR",
+        "Cuba" => "CU", "Curaçao" => "CW", "Cyprus" => "CY", "Czech Republic" => "CZ",
+        "Denmark" => "DK", "Dominican Republic" => "DO", "Ecuador" => "EC", "Egypt" => "EG",
+        "El Salvador" => "SV", "Estonia" => "EE", "Finland" => "FI", "France" => "FR",
+        "Georgia" => "GE", "Germany" => "DE", "Greece" => "GR", "Guatemala" => "GT",
+        "Honduras" => "HN", "Hong Kong" => "HK", "Hungary" => "HU", "Iceland" => "IS",
+        "India" => "IN", "Indonesia" => "ID", "Iran" => "IR", "Ireland" => "IE",
+        "Israel" => "IL", "Italy" => "IT", "Jamaica" => "JM", "Japan" => "JP",
+        "Kazakhstan" => "KZ", "Kenya" => "KE", "Latvia" => "LV", "Lithuania" => "LT",
+        "Luxembourg" => "LU", "Malaysia" => "MY", "Mexico" => "MX", "Moldova" => "MD",
+        "Monaco" => "MC", "Montenegro" => "ME", "Morocco" => "MA", "Netherlands" => "NL",
+        "New Zealand" => "NZ", "Nigeria" => "NG", "North Macedonia" => "MK", "Norway" => "NO",
+        "Northern Mariana Islands" => "MP", "Pakistan" => "PK", "Panama" => "PA",
+        "Paraguay" => "PY", "Peru" => "PE", "Philippines" => "PH", "Poland" => "PL",
+        "Portugal" => "PT", "Puerto Rico" => "PR", "Romania" => "RO", "Russia" => "RU",
+        "Serbia" => "RS", "Singapore" => "SG", "Slovakia" => "SK", "Slovenia" => "SI",
+        "South Africa" => "ZA", "South Korea" => "KR", "Spain" => "ES", "Sweden" => "SE",
+        "Switzerland" => "CH", "Taiwan" => "TW", "Thailand" => "TH", "Tunisia" => "TN",
+        "Turkey" => "TR", "USA" => "US", "Ukraine" => "UA", "United Kingdom" => "GB",
+        "Uruguay" => "UY", "Uzbekistan" => "UZ", "Venezuela" => "VE", "Vietnam" => "VN"
+      }.freeze
+
+      def self.country_flag(match_node, side)
+        flag_el = match_node.at_css("span.event__logo--#{side}[title]")
+        return nil unless flag_el
+
+        country = flag_el["title"].to_s.strip
+        return nil if country.empty? || country == "World"
+
+        iso = COUNTRY_TO_ISO[country]
+        return nil unless iso
+
+        iso.chars.map { |c| (0x1F1E6 + c.ord - "A".ord).chr("UTF-8") }.join
       end
     end
   end
