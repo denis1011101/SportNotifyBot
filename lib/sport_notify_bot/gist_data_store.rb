@@ -10,6 +10,40 @@ module SportNotifyBot
     REQUEST_TIMEOUT_SECONDS = 5
 
     class << self
+      def publish_with_filename(filename, content)
+        return if content.to_s.strip.empty?
+
+        config = SportNotifyBot.configuration
+        token = config.data_gist_token.to_s.strip
+        gist_id = config.data_gist_id.to_s.strip
+        filename = filename.to_s.strip
+
+        if token.empty? || gist_id.empty?
+          puts "Gist публикация отключена: DATA_GIST_TOKEN или DATA_GIST_ID не задан."
+          return
+        end
+
+        return unless validate_config!(gist_id, filename, config)
+
+        response = client.patch("/gists/#{gist_id}") do |req|
+          req.headers["Authorization"] = "Bearer #{token}"
+          req.headers["Accept"] = "application/vnd.github+json"
+          req.headers["Content-Type"] = "application/json"
+          req.headers["X-GitHub-Api-Version"] = "2022-11-28"
+          req.body = { files: { filename => { content: content } } }.to_json
+        end
+
+        if response.success?
+          puts "Данные обновлены в Gist #{gist_id} (#{filename})."
+        else
+          handle_error(config, StandardError.new("Ошибка обновления Gist: HTTP #{response.status}, body=#{response.body}"))
+        end
+      rescue Faraday::Error => e
+        handle_error(config, e, prefix: "Сетевая ошибка при обновлении Gist")
+      rescue StandardError => e
+        handle_error(config, e, prefix: "Непредвиденная ошибка публикации в Gist")
+      end
+
       def publish(content)
         return if content.to_s.strip.empty?
 

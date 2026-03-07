@@ -13,6 +13,8 @@ module SportNotifyBot
         SportNotifyBot.sync_gist
       when "sync_tennis_gist"
         SportNotifyBot.sync_tennis_gist
+      when "sync_telegram_posts"
+        SportNotifyBot.sync_telegram_posts
       when "version"
         puts "SportNotifyBot версия #{SportNotifyBot::VERSION}"
       when "help"
@@ -30,8 +32,9 @@ module SportNotifyBot
         Доступные команды:
           send              Собрать данные, обновить gist и отправить в Telegram
           send_chat         Отправить в Telegram данные из gist
-          sync_gist         Собрать данные и обновить gist без Telegram
-          sync_tennis_gist  Псевдоним sync_gist (обратная совместимость)
+          sync_gist             Собрать данные и обновить gist без Telegram
+          sync_tennis_gist      Псевдоним sync_gist (обратная совместимость)
+          sync_telegram_posts   Получить посты из Telegram-каналов и сохранить в gist
           version           Показать версию
           help              Показать эту справку
       HELP

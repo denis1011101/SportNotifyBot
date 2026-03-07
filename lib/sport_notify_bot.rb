@@ -7,6 +7,7 @@ require_relative "sport_notify_bot/html_formatter"
 require_relative "sport_notify_bot/parsers/base_parser"
 require_relative "sport_notify_bot/parsers/sports_ru_parser"
 require_relative "sport_notify_bot/parsers/flashscore_parser"
+require_relative "sport_notify_bot/parsers/telegram_channel_fetcher"
 require_relative "sport_notify_bot/gist_data_store"
 require_relative "sport_notify_bot/telegram_sender"
 require_relative "sport_notify_bot/message_formatter"
@@ -51,6 +52,19 @@ module SportNotifyBot
     # Совместимость со старой командой
     def sync_tennis_gist
       sync_gist
+    end
+
+    TELEGRAM_CHANNELS = [
+      { name: "ТенниСММ", username: "@tennisnewsmm" },
+      { name: "Ноги Руне 🎾🎾🎾", username: "@nogirune" },
+      { name: "Теннисология", username: "@tennisologia" },
+      { name: "Теннис+", username: "@tennispls" },
+      { name: "ТеннисДрот", username: "@tennisdrot" }
+    ].freeze
+
+    # Fetch posts from Telegram channels and publish to gist
+    def sync_telegram_posts
+      Parsers::TelegramChannelFetcher.fetch_and_publish(TELEGRAM_CHANNELS)
     end
 
     # Создание клиента HTTP
