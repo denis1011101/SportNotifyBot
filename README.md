@@ -60,6 +60,7 @@ Run the bot to send sports notifications to your configured Telegram chat:
 $ sport_notify_bot send
 $ sport_notify_bot send_chat
 $ sport_notify_bot sync_gist
+$ sport_notify_bot sync_telegram_posts
 ```
 
 View version information:
@@ -132,10 +133,14 @@ CRON_TZ=Asia/Yekaterinburg
 30 13 * * * /bin/bash -l -c 'cd /root/apps/SportNotifyBot && ./scripts/start.sh send_chat >> /root/apps/SportNotifyBot/logs/cron.log 2>&1'
 ```
 
+Use for cache:
+https://gist.github.com/denis1011101/9b0dc5e4ddd834ca6e445d0be1b07ded#file-sport_events-txt
+
 Поведение команд:
 - `sync_gist`: парсит все источники и сохраняет полный снапшот в gist (без Telegram).
 - `send_chat`: читает снапшот из gist и отправляет его в Telegram (без онлайн-парсинга).
 - `send`: парсит все источники, обновляет gist и сразу отправляет в Telegram.
+- `sync_telegram_posts`: собирает посты из Telegram-каналов и записывает их в gist (без отправки уведомлений).
 
 ## Contributing
 
