@@ -25,7 +25,7 @@ module SportNotifyBot
         browser = Ferrum::Browser.new(
           headless: true,
           timeout: 30,
-          process_timeout: 30,
+          process_timeout: 60,
           browser_options: {
             "disable-gpu" => nil,
             "no-sandbox" => nil,
