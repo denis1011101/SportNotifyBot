@@ -5,7 +5,7 @@ PATH
       base64 (~> 0.2.0)
       dotenv (~> 3.1.8)
       faraday (~> 2.13.0)
-      ferrum (~> 0.16)
+      ferrum (~> 0.17)
       nokogiri (>= 1.15, < 2.0)
 
 GEM
@@ -27,7 +27,7 @@ GEM
       json
       logger
     faraday-net_http (3.0.2)
-    ferrum (0.16)
+    ferrum (0.17.1)
       addressable (~> 2.5)
       base64 (~> 0.2)
       concurrent-ruby (~> 1.1)

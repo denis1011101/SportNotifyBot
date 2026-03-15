@@ -34,7 +34,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "base64", "~> 0.2.0"
   spec.add_dependency "dotenv", "~> 3.1.8"
   spec.add_dependency "faraday", "~> 2.13.0"
-  spec.add_dependency "ferrum", "~> 0.16"
+  spec.add_dependency "ferrum", "~> 0.17"
   spec.add_dependency "nokogiri", ">= 1.15", "< 2.0"
 
   spec.add_development_dependency "rake", "~> 13.3.0"
