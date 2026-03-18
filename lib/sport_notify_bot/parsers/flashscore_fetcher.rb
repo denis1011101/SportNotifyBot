@@ -23,7 +23,7 @@ module SportNotifyBot
         puts "Найден путь к браузеру: #{browser_path}"
 
         browser = Ferrum::Browser.new(
-          headless: true,
+          headless: "new",
           timeout: 30,
           process_timeout: 60,
           browser_options: {
