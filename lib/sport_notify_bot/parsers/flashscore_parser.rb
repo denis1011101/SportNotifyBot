@@ -21,22 +21,22 @@ module SportNotifyBot
           doc = FlashscoreFetcher.fetch_tennis_doc
           puts "HTML получен, начинаем парсинг..."
         rescue FlashscoreFetcher::BrowserNotFound
-          heading = HtmlFormatter.bold(HtmlFormatter.escape("Теннис (браузер не найден)"))
+          heading = HtmlFormatter.bold(HtmlFormatter.escape("Tennis (browser not found)"))
           result << heading
           return [result, heading.length + 1]
         rescue FlashscoreFetcher::Timeout
-          heading = HtmlFormatter.bold(HtmlFormatter.escape("Теннис (ошибка загрузки таймаут)"))
+          heading = HtmlFormatter.bold(HtmlFormatter.escape("Tennis (loading timeout)"))
           result << heading
           return [result, heading.length + 1]
         rescue FlashscoreFetcher::FetchError, StandardError
-          heading = HtmlFormatter.bold(HtmlFormatter.escape("Теннис (ошибка доступа/обработки)"))
+          heading = HtmlFormatter.bold(HtmlFormatter.escape("Tennis (access/processing error)"))
           result << heading
           return [result, heading.length + 1]
         end
 
         headers = doc.css(FIRST_TOURNAMENT_HEADER_SELECTOR).to_a
         if headers.empty?
-          error_msg = HtmlFormatter.escape("Теннисные турниры на Flashscore не найдены (не найден заголовок).")
+          error_msg = HtmlFormatter.escape("No tennis tournaments found on Flashscore (header not found).")
           puts error_msg
           result << HtmlFormatter.bold(error_msg)
           return [result, error_msg.length + 7 + 1]
@@ -124,7 +124,7 @@ module SportNotifyBot
         end
 
         if result.size == 0 || (result.size == headers.size && result.all? { |r| r =~ /Теннис|Неизвестный турнир|Нет матчей/ })
-          no_matches_msg = HtmlFormatter.escape("Нет матчей для отображения.")
+          no_matches_msg = HtmlFormatter.escape("No matches to display.")
           result << no_matches_msg
           current_length += no_matches_msg.length + 1
         end
