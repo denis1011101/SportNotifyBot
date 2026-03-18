@@ -30,7 +30,15 @@ module SportNotifyBot
             "disable-gpu" => nil,
             "no-sandbox" => nil,
             "disable-dev-shm-usage" => nil,
-            "remote-debugging-port" => 9222
+            "single-process" => nil,
+            "disable-extensions" => nil,
+            "disable-background-networking" => nil,
+            "disable-default-apps" => nil,
+            "disable-sync" => nil,
+            "disable-translate" => nil,
+            "mute-audio" => nil,
+            "no-first-run" => nil,
+            "js-flags" => "--max-old-space-size=128"
           },
           browser_path: browser_path
         )
