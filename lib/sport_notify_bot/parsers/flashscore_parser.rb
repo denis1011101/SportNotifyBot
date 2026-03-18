@@ -21,15 +21,15 @@ module SportNotifyBot
           doc = FlashscoreFetcher.fetch_tennis_doc
           puts "HTML получен, начинаем парсинг..."
         rescue FlashscoreFetcher::BrowserNotFound
-          heading = HtmlFormatter.bold(HtmlFormatter.escape("Tennis (browser not found)"))
+          heading = HtmlFormatter.bold(HtmlFormatter.escape("Теннис: браузер не найден"))
           result << heading
           return [result, heading.length + 1]
         rescue FlashscoreFetcher::Timeout
-          heading = HtmlFormatter.bold(HtmlFormatter.escape("Tennis (loading timeout)"))
+          heading = HtmlFormatter.bold(HtmlFormatter.escape("Теннис: таймаут загрузки"))
           result << heading
           return [result, heading.length + 1]
         rescue FlashscoreFetcher::FetchError, StandardError
-          heading = HtmlFormatter.bold(HtmlFormatter.escape("Tennis (access/processing error)"))
+          heading = HtmlFormatter.bold(HtmlFormatter.escape("Теннис: ошибка доступа или обработки"))
           result << heading
           return [result, heading.length + 1]
         end
