@@ -15,34 +15,49 @@ module SportNotifyBot
 
       # channels: array of hashes with :name and :username keys
       def self.fetch_and_publish(channels)
-        posts = channels.flat_map { |ch| fetch_channel(ch) }
-        posts = deduplicate(posts)
-        posts.sort_by! { |p| p[:published_at] }.reverse!
+        results = channels.map { |ch| fetch_channel(ch) }
 
-        payload = { fetched_at: Time.now.utc.iso8601, posts: posts }.to_json
+        # nil  => канал не удалось загрузить (сеть/DNS)
+        # []   => канал загружен, но постов нет
+        # Если ни один канал не загрузился — не публикуем, чтобы не затереть
+        # прошлый снапшот пустотой.
+        if channels.any? && results.all?(&:nil?)
+          puts "Все #{channels.size} каналов недоступны — гист не обновляем (сохраняем прошлый снапшот)."
+          return []
+        end
 
-        config = SportNotifyBot.configuration
-        filename = config.telegram_posts_gist_filename
-        SportNotifyBot::GistDataStore.publish_with_filename(filename, payload)
-        puts "Опубликовано #{posts.size} постов из #{channels.size} каналов."
+        posts = prepare_posts(results)
+        publish_posts(posts, channels.size)
         posts
+      end
+
+      def self.prepare_posts(results)
+        posts = deduplicate(results.compact.flatten(1))
+        posts.sort_by! { |p| p[:published_at] }.reverse!
+      end
+
+      def self.publish_posts(posts, channels_count)
+        payload = { fetched_at: Time.now.utc.iso8601, posts: posts }.to_json
+        filename = SportNotifyBot.configuration.telegram_posts_gist_filename
+        SportNotifyBot::GistDataStore.publish_with_filename(filename, payload)
+        puts "Опубликовано #{posts.size} постов из #{channels_count} каналов."
       end
 
       def self.fetch_channel(channel)
         username = channel[:username].to_s.delete_prefix("@")
         channel_name = channel[:name].to_s
         channel_url = "https://t.me/#{username}"
-        url = "https://t.me/s/#{username}"
+        url = "https://telegram.me/s/#{username}"
 
         puts "Fetching #{url}..."
         html = http_get(url)
-        return [] if html.nil?
+        return nil if html.nil?
 
         doc = Nokogiri::HTML(html)
         parse_posts(doc, channel_name, channel_url, username)
       rescue StandardError => e
         puts "Ошибка при получении постов из #{channel[:username]}: #{e.class} - #{e.message}"
-        []
+        nil
       end
 
       def self.parse_posts(doc, channel_name, channel_url, username)
@@ -101,7 +116,7 @@ module SportNotifyBot
         end
       end
 
-      private_class_method :fetch_channel, :parse_posts, :deduplicate, :http_get
+      private_class_method :prepare_posts, :publish_posts, :fetch_channel, :parse_posts, :deduplicate, :http_get
     end
   end
 end

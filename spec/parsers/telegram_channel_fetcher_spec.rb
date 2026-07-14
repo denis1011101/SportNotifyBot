@@ -46,7 +46,7 @@ RSpec.describe SportNotifyBot::Parsers::TelegramChannelFetcher do
   end
 
   before do
-    stub_request(:get, "https://t.me/s/testchan")
+    stub_request(:get, "https://telegram.me/s/testchan")
       .to_return(status: 200, body: html_with_posts, headers: { "Content-Type" => "text/html" })
   end
 
@@ -89,7 +89,7 @@ RSpec.describe SportNotifyBot::Parsers::TelegramChannelFetcher do
 
   describe "post parsing" do
     it "skips posts with blank text" do
-      stub_request(:get, "https://t.me/s/testchan")
+      stub_request(:get, "https://telegram.me/s/testchan")
         .to_return(status: 200, body: html_empty_posts)
       allow(SportNotifyBot::GistDataStore).to receive(:publish_with_filename)
       config = double(telegram_posts_gist_filename: "telegram_posts.json",
@@ -117,7 +117,7 @@ RSpec.describe SportNotifyBot::Parsers::TelegramChannelFetcher do
           </div>
         </body></html>
       HTML
-      stub_request(:get, "https://t.me/s/testchan").to_return(status: 200, body: html)
+      stub_request(:get, "https://telegram.me/s/testchan").to_return(status: 200, body: html)
       config = double(telegram_posts_gist_filename: "telegram_posts.json",
                       data_gist_token: "tok", data_gist_id: "abc123",
                       data_gist_raise_errors: false)
@@ -148,7 +148,7 @@ RSpec.describe SportNotifyBot::Parsers::TelegramChannelFetcher do
           </div>
         </body></html>
       HTML
-      stub_request(:get, "https://t.me/s/testchan").to_return(status: 200, body: dup_html)
+      stub_request(:get, "https://telegram.me/s/testchan").to_return(status: 200, body: dup_html)
       config = double(telegram_posts_gist_filename: "telegram_posts.json",
                       data_gist_token: "tok", data_gist_id: "abc123",
                       data_gist_raise_errors: false)
@@ -164,24 +164,22 @@ RSpec.describe SportNotifyBot::Parsers::TelegramChannelFetcher do
   end
 
   describe "error handling" do
-    it "returns empty array when channel HTTP request fails" do
-      stub_request(:get, "https://t.me/s/testchan").to_return(status: 503)
+    it "does not overwrite the gist when all channels fail" do
+      stub_request(:get, "https://telegram.me/s/testchan").to_return(status: 503)
       config = double(telegram_posts_gist_filename: "telegram_posts.json",
                       data_gist_token: "tok", data_gist_id: "abc123",
                       data_gist_raise_errors: false)
       allow(SportNotifyBot).to receive(:configuration).and_return(config)
       allow(SportNotifyBot::GistDataStore).to receive(:publish_with_filename)
 
-      captured_posts = nil
-      allow(SportNotifyBot::GistDataStore).to receive(:publish_with_filename) do |_f, content|
-        captured_posts = JSON.parse(content)["posts"]
-      end
-      expect { described_class.fetch_and_publish([channel]) }.not_to raise_error
-      expect(captured_posts).to be_empty
+      result = nil
+      expect { result = described_class.fetch_and_publish([channel]) }.not_to raise_error
+      expect(result).to eq([])
+      expect(SportNotifyBot::GistDataStore).not_to have_received(:publish_with_filename)
     end
 
     it "returns empty array when network error occurs" do
-      stub_request(:get, "https://t.me/s/testchan").to_raise(Net::OpenTimeout)
+      stub_request(:get, "https://telegram.me/s/testchan").to_raise(Net::OpenTimeout)
       config = double(telegram_posts_gist_filename: "telegram_posts.json",
                       data_gist_token: "tok", data_gist_id: "abc123",
                       data_gist_raise_errors: false)
