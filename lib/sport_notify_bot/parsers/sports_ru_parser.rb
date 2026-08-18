@@ -6,6 +6,8 @@ module SportNotifyBot
     class SportsRuParser < BaseParser
       SPORTS_RU_URL = "https://www.sports.ru/"
       ACCORDION_GROUP_XPATH = '//div[@class="accordion-group teaser-group"]'
+      # У live-матчей к классу добавляется is-active, поэтому сравниваем по токену
+      MATCH_XPATH = './/li[contains(concat(" ", normalize-space(@class), " "), " teaser-event ")]'
 
       # Основной метод парсинга Sports.ru
       def self.parse(max_length: SportNotifyBot.configuration.max_message_length)
@@ -85,7 +87,7 @@ module SportNotifyBot
         result = []
         current_length = 0
 
-        sport_section.xpath('.//li[@class="teaser-event"]').each do |match_node|
+        sport_section.xpath(MATCH_XPATH).each do |match_node|
           match_result, match_length = parse_match(match_node)
 
           # Проверяем, есть ли место для этого матча
@@ -126,26 +128,22 @@ module SportNotifyBot
 
       # Парсинг информации о командах
       def self.parse_teams(team_nodes)
-        teams_data = []
+        team_nodes.map { |team_node| format_team(team_node) }
+      end
 
-        team_nodes.each do |team_node|
-          team_name_element = team_node.at_xpath('.//a | .//span[@class="teaser-event__board-player-name"]')
-          team_name_raw = team_name_element ? team_name_element.text.strip : "Команда ?"
-          escaped_team_name = HtmlFormatter.escape(team_name_raw)
+      # Форматирование одной команды: флаг страны (если известна) + название курсивом
+      def self.format_team(team_node)
+        team_name_element = team_node.at_xpath('.//a | .//span[@class="teaser-event__board-player-name"]')
+        team_name_raw = team_name_element ? team_name_element.text.strip : "Команда ?"
+        team_display = HtmlFormatter.escape(team_name_raw)
 
-          # Обработка флага страны
-          country_name = extract_country(team_node)
+        # Известные страны показываем эмодзи-флагом, остальные оставляем текстом в скобках
+        country_name = extract_country(team_node)
+        flag = CountryFlag.for(country_name)
+        team_display += " (#{HtmlFormatter.escape(country_name)})" if flag.nil? && !country_name.empty?
 
-          team_display = escaped_team_name
-          unless country_name.empty?
-            escaped_country_name = HtmlFormatter.escape(country_name)
-            team_display += " (#{escaped_country_name})"
-          end
-
-          teams_data << HtmlFormatter.italic(team_display)
-        end
-
-        teams_data
+        italic_name = HtmlFormatter.italic(team_display)
+        flag ? "#{flag} #{italic_name}" : italic_name
       end
 
       # Извлечение информации о стране команды

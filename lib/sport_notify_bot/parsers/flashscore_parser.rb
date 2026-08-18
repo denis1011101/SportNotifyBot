@@ -184,44 +184,11 @@ module SportNotifyBot
         "#{escaped_time} - #{home_display} #{escaped_score_home} : #{escaped_score_away} #{away_display}"
       end
 
-      COUNTRY_TO_ISO = {
-        "Algeria" => "DZ", "Andorra" => "AD", "Argentina" => "AR", "Armenia" => "AM",
-        "Australia" => "AU", "Austria" => "AT", "Barbados" => "BB", "Belarus" => "BY",
-        "Belgium" => "BE", "Bolivia" => "BO", "Bosnia and Herzegovina" => "BA",
-        "Brazil" => "BR", "Bulgaria" => "BG", "Canada" => "CA", "Chile" => "CL",
-        "China" => "CN", "Colombia" => "CO", "Costa Rica" => "CR", "Croatia" => "HR",
-        "Cuba" => "CU", "Curaçao" => "CW", "Cyprus" => "CY", "Czech Republic" => "CZ",
-        "Denmark" => "DK", "Dominican Republic" => "DO", "Ecuador" => "EC", "Egypt" => "EG",
-        "El Salvador" => "SV", "Estonia" => "EE", "Finland" => "FI", "France" => "FR",
-        "Georgia" => "GE", "Germany" => "DE", "Greece" => "GR", "Guatemala" => "GT",
-        "Honduras" => "HN", "Hong Kong" => "HK", "Hungary" => "HU", "Iceland" => "IS",
-        "India" => "IN", "Indonesia" => "ID", "Iran" => "IR", "Ireland" => "IE",
-        "Israel" => "IL", "Italy" => "IT", "Jamaica" => "JM", "Japan" => "JP",
-        "Kazakhstan" => "KZ", "Kenya" => "KE", "Latvia" => "LV", "Lithuania" => "LT",
-        "Luxembourg" => "LU", "Malaysia" => "MY", "Mexico" => "MX", "Moldova" => "MD",
-        "Monaco" => "MC", "Montenegro" => "ME", "Morocco" => "MA", "Netherlands" => "NL",
-        "New Zealand" => "NZ", "Nigeria" => "NG", "North Macedonia" => "MK", "Norway" => "NO",
-        "Northern Mariana Islands" => "MP", "Pakistan" => "PK", "Panama" => "PA",
-        "Paraguay" => "PY", "Peru" => "PE", "Philippines" => "PH", "Poland" => "PL",
-        "Portugal" => "PT", "Puerto Rico" => "PR", "Romania" => "RO", "Russia" => "RU",
-        "Serbia" => "RS", "Singapore" => "SG", "Slovakia" => "SK", "Slovenia" => "SI",
-        "South Africa" => "ZA", "South Korea" => "KR", "Spain" => "ES", "Sweden" => "SE",
-        "Switzerland" => "CH", "Taiwan" => "TW", "Thailand" => "TH", "Tunisia" => "TN",
-        "Turkey" => "TR", "USA" => "US", "Ukraine" => "UA", "United Kingdom" => "GB",
-        "Uruguay" => "UY", "Uzbekistan" => "UZ", "Venezuela" => "VE", "Vietnam" => "VN"
-      }.freeze
-
       def self.country_flag(match_node, side)
         flag_el = match_node.at_css("span.event__logo--#{side}[title]")
         return nil unless flag_el
 
-        country = flag_el["title"].to_s.strip
-        return nil if country.empty? || country == "World"
-
-        iso = COUNTRY_TO_ISO[country]
-        return nil unless iso
-
-        iso.chars.map { |c| (0x1F1E6 + c.ord - "A".ord).chr("UTF-8") }.join
+        CountryFlag.for(flag_el["title"])
       end
     end
   end
